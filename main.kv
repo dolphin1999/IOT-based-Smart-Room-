@@ -1,0 +1,68 @@
+<RootWidget>:
+# this is the rule for your root widget, defining it's look and feel.
+    GridLayout:
+        cols: 2
+        padding: [80,20]
+        spacing: [80,20]
+        Label:
+            text: 'L1'
+            id: L1
+        ToggleButton:
+            state: root.getState1()
+            id: S1
+            text: root.Condition1()
+            background_color: [1,1,1,1]
+            on_press: root.setState1()
+            disabled: True
+        Label:
+            id: L2
+            text: 'L2'
+        ToggleButton:
+            state: root.getState2()
+            id: S2
+            text: root.Condition2()
+            background_color: [1,1,1,1]
+            on_press: root.setState2()
+            disabled: True
+        Label:
+            id: L3
+            text: 'F1'
+        ToggleButton:
+            state: root.getState3()
+            id: S3
+            text: root.Condition3()
+            background_color: [1,1,1,1]
+            on_press: root.setState3()
+            disabled: True
+        Label:
+            id: L4
+            text: 'F2'
+        ToggleButton:
+            state: root.getState4()
+            id: S4
+            text: root.Condition4()
+            background_color: [1,1,1,1]
+            on_press: root.setState4()
+            disabled: True
+        Button:
+            id: ManButton
+            on_press: root.ManualSelection()
+            text: 'CHANGE TO AUTOMATIC'
+            background_color: [2,2,.8,1]
+            disabled: True
+        Button:
+            id: AutoButton
+            on_press: root.AutomaticSelection()
+            text: 'CHANGE TO MANUAL'
+            background_color: [2,1,.8,1]
+            disabled: True
+        Button:
+            id: RefreshButton
+            on_press: root.startState()
+            text: 'START'
+            background_color: [0,2,2.5,1]
+
+        Label:
+            id: L5
+            text: ""
+        

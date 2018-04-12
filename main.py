@@ -1,85 +1,300 @@
-from __future__ import print_function
-import httplib2
-import os,io
+from kivy.uix.floatlayout import FloatLayout
+from kivy.app import App
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
+print("step1 done!")
+scope = ['https://spreadsheets.google.com/feeds' , 'https://www.googleapis.com/auth/drive']
+creds = ServiceAccountCredentials.from_json_keyfile_name('client_secret.json', scope)
+print("step2 done!")
+client = gspread.authorize(creds)
 
-from apiclient import discovery
-from oauth2client import client
-from oauth2client import tools
-from oauth2client.file import Storage
+print("step3 done!")
 
-try:
-    import argparse
-    flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-except ImportError:
-    flags = None
+sheet1 = client.open('Client').sheet1
+sheet2 = client.open('Status').sheet1
+sheet3 = client.open('Mode').sheet1
 
-import auth
-from apiclient.http import MediaFileUpload, MediaIoBaseDownload
-'''try:
-    import urllib.request as urllib2
-except ImportError:
-    import urllib2
-proxy = urllib2.ProxyHandler({'http':'edcguest:edcguest@172.31.100.14:3128', 'https':'edcguest:edcguest@172.31.100.14:3128'})
-opener = urllib2.build_opener(proxy)
-urllib2.install_opener(opener)'''
-SCOPES = 'https://www.googleapis.com/auth/drive'
-CLIENT_SECRET_FILE = 'client_secret.json'
-APPLICATION_NAME = 'Drive API Python Quickstart'
-authInst=auth.auth(SCOPES, CLIENT_SECRET_FILE, APPLICATION_NAME)
-credentials=authInst.getCredentials()
-http = credentials.authorize(httplib2.Http())
-service = discovery.build('drive', 'v3', http=http)
+print("step4 done!")
 
-def getFiles(size) :
-    results = service.files().list(
-        pageSize=size,fields="nextPageToken, files(id, name)").execute()
-    items = results.get('files', [])
-    if not items:
-        print('No files found.')
-    else:
-        print('Files:')
-        for item in items:
-            print('{0} ({1})'.format(item['name'], item['id']))
 
-def uploadFile(filename,filepath,mimetype) :
-    file_metadata = {'name': filename}
-    media = MediaFileUpload(filepath,
-                            mimetype=mimetype)
-    file = service.files().create(body=file_metadata,
-                                        media_body=media,
-                                        fields='id').execute()
-    print('File ID: %s' % file.get('id'))
 
-def downloadFile(file_id,filepath,mimetype) :
-    request = service.files().get_media(fileId=file_id)
-    fh = io.BytesIO()
-    downloader = MediaIoBaseDownload(fh, request)
-    done = False
-    while done is False:
-        status, done = downloader.next_chunk()
-        print ("Download %d%%." % int(status.progress() * 100))
-    with io.open(filepath,'wb') as f :
-        fh.seek(0)
-        f.write(fh.read())
-def searchFiles(size,query) :
-    results = service.files().list(
-        pageSize=size,fields="nextPageToken, files(id, name, kind, mimeType)",q=query).execute()
-    items = results.get('files', [])
-    if not items:
-        print('No files found.')
-    else:
-        print('Searched Files:')
-        for item in items:
-            print(item)
-            print('{0} ({1})'.format(item['name'], item['id']))
-def delete_file(file_id) :
-    service.files().delete(fileId=file_id).execute()
-    print('File deleted successfully')
-    print('remaining files are :')
-    getFiles(500)
 
-getFiles(500)
-#uploadFile('Status.txt','Status.txt','text/plain')
-#downloadFile('19-Tug1GQKqO0E_3Lyyt-REfDc5IDidkE','downloadedStatus.txt','text/plain')
-#searchFiles(500,'name contains "Status"')
-#delete_file('1OAg9ZXES2nSpJWplvbG5m0K3IqL0cHDU')
+
+def printSheet(sheet) :
+	print("printSheet called")	
+	row_count = len(sheet.get_all_records())+1
+	for i in range(row_count) :
+		RowInfo = sheet.row_values(i+1)
+		print(RowInfo)
+
+
+global mode
+
+mode = 1
+
+
+def getMode():
+	print("getMode called")
+	if int(sheet3.cell(1,2).value.encode('utf-8'))==1:
+		return 1
+	else:
+		return 0
+def setMode(mode_id):
+	print("SetMode called")
+	sheet3.update_cell(1,2,mode_id)
+
+	if mode == 1:
+		sheet1.update_cell(2,2,int(sheet2.cell(2,2).value.encode('utf-8')))
+		sheet1.update_cell(3,2,int(sheet2.cell(3,2).value.encode('utf-8')))
+		sheet1.update_cell(4,2,int(sheet2.cell(4,2).value.encode('utf-8')))
+		sheet1.update_cell(5,2,int(sheet2.cell(5,2).value.encode('utf-8')))
+
+mode = getMode()
+
+print("get mode done")
+
+
+class RootWidget(FloatLayout):
+    '''This is the class representing your root widget.
+       By default it is inherited from BoxLayout,
+       you can use any other layout/widget depending on your usage.
+    '''
+    def ManualSelection(self):
+	print("ManualSelection called")
+    	self.ids.ManButton.disabled = True
+	self.ids.AutoButton.disabled = False
+	self.ids.S1.disabled = True
+	self.ids.S2.disabled = True
+	self.ids.S3.disabled = True
+	self.ids.S4.disabled = True
+	mode = 1
+	setMode(mode)
+	self.ids.L5.text = "AUTOMATIC MODE ON!"
+	while(True):
+
+		temp1 = int(sheet2.cell(2,2).value.encode('utf-8'))
+		temp2 = int(sheet2.cell(3,2).value.encode('utf-8'))
+		temp3 = int(sheet2.cell(4,2).value.encode('utf-8'))
+		temp4 = int(sheet2.cell(5,2).value.encode('utf-8'))
+
+		if temp1 == 1:
+			self.ids.S1.text = "OFF"
+			return 'down'
+		else:
+			self.ids.S1.text = "ON"
+			return 'normal'
+
+		if temp2 == 1:
+			self.ids.S2.text = "OFF"
+			return 'down'
+		else:
+			self.ids.S2.text = "ON"
+			return 'normal'
+
+		if temp3 == 1:
+			self.ids.S3.text = "OFF"
+			return 'down'
+		else:
+			self.ids.S3.text = "ON"
+			return 'normal'
+
+		if temp4 == 1:
+			self.ids.S4.text = "OFF"
+			return 'down'
+		else:
+			self.ids.S4.text = "ON"
+			return 'normal'
+
+
+    def AutomaticSelection(self):
+	print("AutomaticSelection called")
+    	self.ids.ManButton.disabled = False
+	self.ids.AutoButton.disabled = True
+	self.ids.S1.disabled = False
+	self.ids.S2.disabled = False
+	self.ids.S3.disabled = False
+	self.ids.S4.disabled = False
+	mode = 0
+	setMode(mode)
+	self.ids.L5.text = "MANUAL MODE ON!"
+
+    def startState(self):
+	print("Start called")
+        global mode
+	sheet1.update_cell(2,2,int(sheet2.cell(2,2).value.encode('utf-8')))
+	sheet1.update_cell(3,2,int(sheet2.cell(3,2).value.encode('utf-8')))
+	sheet1.update_cell(4,2,int(sheet2.cell(4,2).value.encode('utf-8')))
+	sheet1.update_cell(5,2,int(sheet2.cell(5,2).value.encode('utf-8')))
+	print("STARTED:")
+	printSheet(sheet1)
+	self.ids.RefreshButton.disabled = True
+	if mode == 1:
+		    	self.ids.ManButton.disabled = False
+			self.ids.AutoButton.disabled = True
+			self.ids.S1.disabled = False
+			self.ids.S2.disabled = False
+			self.ids.S3.disabled = False
+			self.ids.S4.disabled = False
+			mode = 1
+			setMode(mode)
+			self.ids.L5.text = "MANUAL MODE ON!"
+	else:
+		    	self.ids.ManButton.disabled = True
+			self.ids.AutoButton.disabled = False
+			self.ids.S1.disabled = True
+			self.ids.S2.disabled = True
+			self.ids.S3.disabled = True
+			self.ids.S4.disabled = True
+			mode = 0
+			setMode(mode)
+			self.ids.L5.text = "AUTOMATIC MODE ON!"
+
+    def getState1(self):
+	print("GetState1 called")
+
+	temp = int(sheet2.cell(2,2).value.encode('utf-8'))
+
+	if temp == 1:
+		self.ids.S1.text = "OFF"
+		self.ids.S1.background_color = (0,1,0,1)
+		return 'down'
+	else:
+		self.ids.S1.text = "ON"
+		self.ids.S1.background_color = (1,0,0,1)
+		return 'normal'
+
+    def getState2(self):
+	print("GetState2 called")	
+	temp = int(sheet2.cell(3,2).value.encode('utf-8'))
+
+	if temp == 1:
+		self.ids.S2.text = "OFF"
+		return 'down'
+	else:
+		self.ids.S2.text = "ON"
+		return 'normal'
+
+    def getState3(self):
+	print("GetState3 called")	
+	temp = int(sheet2.cell(4,2).value.encode('utf-8'))
+
+	if temp == 1:
+		self.ids.S3.text = "OFF"
+		return 'down'
+	else:
+		self.ids.S3.text = "ON"
+		return 'normal'
+    def getState4(self):
+	print("GetState4 called")	
+	temp = int(sheet2.cell(5,2).value.encode('utf-8'))
+
+	if temp == 1:
+		self.ids.S4.text = "OFF"
+		return 'down'
+	else:
+		self.ids.S4.text = "ON"
+		return 'normal'
+
+
+    def setState1(self):
+	print("SetState1 called")
+	if self.ids.S1.state == 'normal':
+		self.ids.S1.text = "OFF"
+		sheet1.update_cell(2,2,0)
+		printSheet(sheet1)
+	elif self.ids.S1.state == 'down':
+		self.ids.S1.text = "ON"
+		sheet1.update_cell(2,2,1)
+		printSheet(sheet1)
+
+    def setState2(self):
+	print("SetState2 called")
+	if self.ids.S2.state == 'normal':
+		self.ids.S2.text = "OFF"
+
+		sheet1.update_cell(3,2,0)
+		printSheet(sheet1)
+	elif self.ids.S2.state == 'down':
+		self.ids.S4.text = "ON"
+		sheet1.update_cell(3,2,1)
+		printSheet(sheet1)
+
+    def setState3(self):
+	print("SetState3 called")	
+	if self.ids.S3.state == 'normal':
+		self.ids.S3.text = "OFF"
+		sheet1.update_cell(4,2,0)
+		printSheet(sheet1)
+
+	elif self.ids.S3.state == 'down':
+		self.ids.S3.text = "ON"
+		sheet1.update_cell(4,2,1)
+		printSheet(sheet1)
+
+    def setState4(self):
+	print("SetState4 called")	
+	if self.ids.S4.state == 'normal':
+		self.ids.S4.text = "OFF"
+		sheet1.update_cell(5,2,0)
+		printSheet(sheet1)
+	elif self.ids.S4.state == 'down':
+		self.ids.S4.text = "ON"
+		sheet1.update_cell(5,2,1)
+		printSheet(sheet1)
+
+    def Condition1(self):
+	temp = int(sheet2.cell(2,2).value.encode('utf-8'))
+
+	if temp == 0:
+		return 'OFF'
+	else:
+		return 'ON'
+    def Condition2(self):
+	temp = int(sheet2.cell(3,2).value.encode('utf-8'))
+
+	if temp == 0:
+		return 'OFF'
+	else:
+		return 'ON'
+    def Condition3(self):
+	temp = int(sheet2.cell(4,2).value.encode('utf-8'))
+
+	if temp == 0:
+		return 'OFF'
+	else:
+		return 'ON'
+    def Condition4(self):
+	temp = int(sheet2.cell(5,2).value.encode('utf-8'))
+
+	if temp == 0:
+		return 'OFF'
+	else:
+		return 'ON'
+
+
+class MainApp(App):
+    '''This is the main class of your app.
+       Define any app wide entities here.
+       This class can be accessed anywhere inside the kivy app as,
+       in python::
+
+         app = App.get_running_app()
+         print (app.title)
+
+       in kv language::
+
+         on_release: print(app.title)
+       Name of the .kv file that is auto-loaded is derived from the name
+       of this class::
+
+         MainApp = main.kv
+         MainClass = mainclass.kv
+
+       The App part is auto removed and the whole name is lowercased.
+    '''
+
+    def build(self):
+        return RootWidget()
+
+if '__main__' == __name__:
+    MainApp().run()
