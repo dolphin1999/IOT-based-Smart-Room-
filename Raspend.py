@@ -7,12 +7,15 @@
 
 #import gspread for manipulating google spreadsheets, RPi.GPIO for using GPIO functions, 
 #ServiceAccountCredentials from oauth2client.service_account for authorising access to API
+#dht11 for using dht11 temperature sensor. 
 
 import gspread
 import RPi.GPIO as GPIO
 import time
 from threading import Thread
 from oauth2client.service_account import ServiceAccountCredentials
+import dht11
+import datetime
 
 scope = ['https://spreadsheets.google.com/feeds' , 'https://www.googleapis.com/auth/drive']
 
@@ -39,10 +42,13 @@ def printSheet(sheet) :
 
 
 #GPIO.BCM option means that you are referring to the pins by the 'Broadcom SOC channel'
+#GPIO.cleanup() is used to cleanup all the ports that you have used.
 GPIO.setmode(GPIO.BCM)
+GPIO.cleanup()
 
 #setting pins 4, 17, 23, 24 of Raspberry Pi's GPIO pins in GPIO.OUT mode so devices connected to them can act as 
 #output devices
+#Light 1 and 2 are connected to pin 4, 17 of GPIO resepectively. And Fan 1 and Fan 2 are connected to pin 23, 24.
 GPIO.setup(4,GPIO.OUT)
 GPIO.setup(17,GPIO.OUT)
 GPIO.setup(23,GPIO.OUT)
@@ -73,87 +79,113 @@ no_of_person = 0
 GPIO.setup(8,GPIO.IN)
 GPIO.setup(21,GPIO.IN)
 
-#function for continuosly calculating the number of person entering in room.
-def PIR_Sensor():
-        global no_of_person
-        time.sleep(2)
-        while True:
-                if(GPIO.input(8)):
-                        no_of_person += 1
-                        print("no of person = ", no_of_person)
-                        time.sleep(6)
+#function for continuosly calculating the number of person entering in room. #PIR sesnor for entry is connected to 
+#pin 8 of GPIO.
+def PIR_Sensor_forEntry():
+    global no_of_person
+    time.sleep(2)
+    while True:
+        if(GPIO.input(8)):
+            no_of_person += 1
+            print("no of person = ", no_of_person)
+            time.sleep(6)
+
+#function to continuously calculate the number of person exiting the room.
+def PIR_Sensor_forExit():
+    global no_of_person
+    time.sleep(2)
+    while True:
+        if(GPIO.input(21)):
+            no_of_person -= 1
+            print("no of person = ", no_of_person)
+            time.sleep(6)
+
+#this function will continuously check the temperature of the surroundings. Temperature sensor(DHT11) is connected to
+#pin 14 of GPIO.
+def temperatureSensor() :
+	global temperature
+	instance = dht11.DHT11(pin=14)
+
+	while True:
+		result = instance.read()
+		if result.is_valid():
+		    print("Last valid input: " + str(datetime.datetime.now()))
+		    print("Temperature: %d C" % result.temperature)
+		    print("Humidity: %d %%" % result.humidity)
+		    temperature = result.temperature
+		time.sleep(1)
+
 
 #this function will continuous check the mode, it will continuously fetch the input given given by the user
 # using google spreadsheet and will change state of devices accordingly using GPIO pins. And if the mode changes to automatic
 #it will stop doing the above written functionality. This function will work for manual mode.
 def t1():
-                global mode
-                print("t1")
-                print(mode)
-                while True:
-                        if(mode == 1):
-                                mode = int(sheet3.cell(1,2).value.encode('utf-8'))
-                                time.sleep(2)
+    global mode
+    print("t1")
+    print(mode)
+    while True:
+        if(mode == 1):
+            mode = int(sheet3.cell(1,2).value.encode('utf-8'))
+            time.sleep(2)
 
-                                L1 = int(sheet1.cell(2,2).value.encode('utf-8'))
-                                L2 = int(sheet1.cell(3,2).value.encode('utf-8'))
-                                F1 = int(sheet1.cell(4,2).value.encode('utf-8'))
-                                F2 = int(sheet1.cell(5,2).value.encode('utf-8'))
+            L1 = int(sheet1.cell(2,2).value.encode('utf-8'))
+            L2 = int(sheet1.cell(3,2).value.encode('utf-8'))
+            F1 = int(sheet1.cell(4,2).value.encode('utf-8'))
+            F2 = int(sheet1.cell(5,2).value.encode('utf-8'))
 
-                                GPIO.output(4,L1)
-                                GPIO.output(17,L2)
-                                GPIO.output(23,F1)
-                                GPIO.output(24,F2)
+            GPIO.output(4,L1)
+            GPIO.output(17,L2)
+            GPIO.output(23,F1)
+            GPIO.output(24,F2)
 
-                                print(L1,L2,F1,F2)
+            print(L1,L2,F1,F2)
 
 #This code will execute in automatic mode. This function will continuously fetch the mode, and it will continuously fetch data 
 #from sensors and will change the status of devices automatically.
 def t2():
-        global mode
-        global no_of_person
-        global temperature
-        global lux
-        global lux_thresh1, lux_thresh2, temp_thresh1, temp_thresh2
+    global mode
+    global no_of_person
+    global temperature
+    global lux
+    global lux_thresh1, lux_thresh2, temp_thresh1, temp_thresh2
 
-        print(mode)
-        while True:
-                if(mode == 0):
-                       mode = int(sheet3.cell(1,2).value.encode('utf-8'))
-                        time.sleep(2)
-                        L1 = 0
-                        L2 = 0
-                        F1 = 0
-                        F2 = 0
-                        if(no_of_person >= 1):
-                                if(temperature <= temp_thresh1 and temperature >= temp_thresh2):
-                                        F1 = 1
-                                elif(temperature > 30) :
-                                        F1 = 1
-                                        F2 = 1
-                                if(lux <= lux_thresh1 and lux >= lux_thresh2):
-                                        L1 = 1
-                                elif(lux < lux_thresh2):
-                                        L1 = 1
-                                        L2 = 1
+    print(mode)
+    while True:
+	    if(mode == 0):
+        	mode = int(sheet3.cell(1,2).value.encode('utf-8'))
+        	time.sleep(2)
+        	L1 = 0
+        	L2 = 0
+        	F1 = 0
+        	F2 = 0
+        	if(no_of_person >= 1):
+        		if(temperature <= temp_thresh1 and temperature >= temp_thresh2):
+        			F1 = 1
+        		elif(temperature > 30) :
+        			F1 = 1
+        			F2 = 1
+        		if(lux <= lux_thresh1 and lux >= lux_thresh2):
+        			L1 = 1
+        		elif(lux < lux_thresh2):
+        			L1 = 1
+        			L2 = 1
 
+        	GPIO.output(4,L1)
+        	GPIO.output(17,L2)
+        	GPIO.output(23,F1)
+        	GPIO.output(24,F2)
 
-                        GPIO.output(4,L1)
-                        GPIO.output(17,L2)
-                        GPIO.output(23,F1)
-                        GPIO.output(24,F2)
-
-                        sheet2.update_cell(2,2,L1)
-                        sheet2.update_cell(3,2,L2)
-                        sheet2.update_cell(4,2,F1)
-                        sheet2.update_cell(5,2,F2)
+        	sheet2.update_cell(2,2,L1)
+        	sheet2.update_cell(3,2,L2)
+        	sheet2.update_cell(4,2,F1)
+        	sheet2.update_cell(5,2,F2)
 
 
 Thread(target=t1).start()
 Thread(target=t2).start()
-Thread(target = PIR_Sensor).start()
-
-
+Thread(target = PIR_Sensor_forEntry).start()
+Thread(target = PIR_Sensor_forExit).start()
+Thread(target = temperatureSensor).start()
 
 
 
