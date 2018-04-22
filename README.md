@@ -43,6 +43,10 @@ This module contains the code for fetching data from server and changing state o
 
 [Raspend.py](https://github.com/dolphin1999/IOT-based-Smart-Room-/blob/master/Raspend.py) is required at RaspberryPi end.
 
+### Connections
+<img src = "images/Raspberry%20Pi%20Real%20Time%201_bb.jpg">
+
+
 ### Installation
 ```sh
 pip install oauth2client
