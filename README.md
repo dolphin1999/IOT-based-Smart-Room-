@@ -4,7 +4,7 @@ Home automation system will control lighting, climate, entertainment systems, an
 
 We can control home appliances via phone from anywhere in the world or let it get controlled automatically. 
 
-##Architecture
+## Architecture
 
 <img src = "images/1*lw5ULtUQBmP_CY8aJbKBxg.png">
 
