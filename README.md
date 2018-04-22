@@ -1,1 +1,1 @@
-# IOT-based-Smart-Room-
+<img src = "images/GetBannerImage.ashx.jpeg">
