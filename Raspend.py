@@ -67,8 +67,8 @@ global lux, temperature, lux_thresh1, lux_thresh2, temp_thresh1, temp_thresh2, n
 
 lux = 0
 temperature = 0
-lux_thresh1 = 400
-lux_thresh2 = 200
+lux_thresh1 = 200
+lux_thresh2 = 400
 temp_thresh2 = 20
 temp_thresh1 = 30
 no_of_person = 0
@@ -154,8 +154,8 @@ def t2():
 	    if(mode == 0):
         	mode = int(sheet3.cell(1,2).value.encode('utf-8'))
         	time.sleep(2)
-        	L1 = 0
-        	L2 = 0
+        	L1 = int(sheet2.cell(2,2).value.encode('utf-8'))
+        	L2 = int(sheet2.cell(3,2).value.encode('utf-8'))
         	F1 = 0
         	F2 = 0
         	if(no_of_person >= 1):
@@ -164,11 +164,21 @@ def t2():
         		elif(temperature > 30) :
         			F1 = 1
         			F2 = 1
-        		if(lux <= lux_thresh1 and lux >= lux_thresh2):
-        			L1 = 1
-        		elif(lux < lux_thresh2):
-        			L1 = 1
-        			L2 = 1
+        		if(lux > lux_thresh2) :
+        			if(L1 == 1 and L2 == 1) :
+        				L2 = 0
+        			elif(L1 == 1) :
+        				L1 = 0
+        			elif(L2 == 1) :
+        				L2 = 0
+
+        		elif(lux < lux_thresh1) :
+        			if(L1 == 0 and L2 == 0) :
+        				L1 = 1
+        			elif(L1 == 1 and L2 == 0) :
+        				L2 = 1
+        			elif(L1 == 0 and L2 == 1) :
+        				L1 = 1
 
         	GPIO.output(4,L1)
         	GPIO.output(17,L2)
