@@ -71,7 +71,9 @@ The following steps are required to be followed to setup the database server :-
 
 For each and every minute detail refer to the [blog]()
 
-Some glimpses of working project :
+### Some glimpses of working project :
+<iframe width="854" height="480" src="https://github.com/dolphin1999/IOT-based-Smart-Room-/blob/master/My%20Movie.mp4" frameborder="0" allowfullscreen></iframe>
+
 
 
 
