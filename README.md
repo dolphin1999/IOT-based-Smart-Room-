@@ -69,7 +69,7 @@ The following steps are required to be followed to setup the database server :-
 7) Copy the JSON file to the code directory and rename it to client_secret.json.
 8) Find the  client_email inside client_secret.json. Back in spreadsheet, click the Share button in the top right, and paste the client email into the People field to give it edit rights. Hit Send.
 
-For each and every minute detail refer to the [blog]()
+For each and every minute detail refer to the [blog](https://medium.com/@paliwalmanu99/internet-of-things-raspberry-pi-home-automation-system-based-on-iot-a5862fdb4d58)
 
 ### Some glimpses of working project :
 [Watch the video here](https://drive.google.com/open?id=1WMpAnpgXQCUSIfwDlJ74kY0ysotc0RO4)
